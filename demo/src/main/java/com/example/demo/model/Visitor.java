@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Visitor {
     private Long id;
-    private String name; // Необязательное
+    private String name;
     private int age;
     private Gender gender;
 
