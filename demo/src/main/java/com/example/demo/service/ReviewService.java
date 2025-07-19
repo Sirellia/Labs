@@ -4,8 +4,10 @@ import com.example.demo.dto.ReviewRequestDTO;
 import com.example.demo.dto.ReviewResponseDTO;
 import com.example.demo.model.Restaurant;
 import com.example.demo.model.Review;
-import com.example.demo.repository.RestaurantRepository;
-import com.example.demo.repository.ReviewRepository;
+import com.example.demo.model.Visitor;
+import com.example.demo.repository.RestaurantJpaRepository;
+import com.example.demo.repository.ReviewJpaRepository;
+import com.example.demo.repository.VisitorJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,28 +19,33 @@ import java.util.stream.Collectors;
 
 @Service
 public class ReviewService {
-    private final ReviewRepository reviewRepository;
-    private final RestaurantRepository restaurantRepository;
+    private final ReviewJpaRepository reviewRepository;
+    private final RestaurantJpaRepository restaurantRepository;
+    private final VisitorJpaRepository visitorRepository;
 
     @Autowired
-    public ReviewService(ReviewRepository reviewRepository, RestaurantRepository restaurantRepository) {
+    public ReviewService(ReviewJpaRepository reviewRepository, RestaurantJpaRepository restaurantRepository, VisitorJpaRepository visitorRepository) {
         this.reviewRepository = reviewRepository;
         this.restaurantRepository = restaurantRepository;
+        this.visitorRepository = visitorRepository;
     }
 
     public ReviewResponseDTO save(ReviewRequestDTO dto) {
-        Review review = new Review(dto.visitorId(), dto.restaurantId(), dto.score(), dto.comment());
-        reviewRepository.save(review);
-        recalculateRestaurantRating(dto.restaurantId());
+        Visitor visitor = visitorRepository.findById(dto.visitorId())
+                .orElseThrow(() -> new IllegalArgumentException("Visitor not found"));
+        Restaurant restaurant = restaurantRepository.findById(dto.restaurantId())
+                .orElseThrow(() -> new IllegalArgumentException("Restaurant not found"));
+        Review review = new Review(null, visitor, restaurant, dto.score(), dto.comment());
+        review = reviewRepository.save(review);
+        recalculateRestaurantRating(restaurant.getId());
         return toResponseDTO(review);
     }
 
-    public void remove(Long visitorId, Long restaurantId) {
-        reviewRepository.findById(visitorId, restaurantId)
-                .ifPresent(r -> {
-                    reviewRepository.remove(r);
-                    recalculateRestaurantRating(restaurantId);
-                });
+    public void remove(Long reviewId) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new IllegalArgumentException("Review not found"));
+        reviewRepository.deleteById(reviewId);
+        recalculateRestaurantRating(review.getRestaurant().getId());
     }
 
     public List<ReviewResponseDTO> findAll() {
@@ -47,38 +54,40 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
-    public Optional<ReviewResponseDTO> findById(Long visitorId, Long restaurantId) {
-        return reviewRepository.findById(visitorId, restaurantId)
+    public Optional<ReviewResponseDTO> findById(Long reviewId) {
+        return reviewRepository.findById(reviewId)
                 .map(this::toResponseDTO);
     }
 
-    public ReviewResponseDTO update(Long visitorId, Long restaurantId, ReviewRequestDTO dto) {
-        Optional<Review> optional = reviewRepository.findById(visitorId, restaurantId);
-        if (optional.isPresent()) {
-            Review review = optional.get();
-            review.setScore(dto.score());
-            review.setComment(dto.comment());
-            recalculateRestaurantRating(restaurantId);
-            return toResponseDTO(review);
-        }
-        throw new IllegalArgumentException("Review not found");
+    public ReviewResponseDTO update(Long reviewId, ReviewRequestDTO dto) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new IllegalArgumentException("Review not found"));
+        review.setScore(dto.score());
+        review.setComment(dto.comment());
+        review = reviewRepository.save(review);
+        recalculateRestaurantRating(review.getRestaurant().getId());
+        return toResponseDTO(review);
     }
 
     private void recalculateRestaurantRating(Long restaurantId) {
         List<Review> reviews = reviewRepository.findAll();
         double avg = reviews.stream()
-                .filter(r -> r.getRestaurantId().equals(restaurantId))
+                .filter(r -> r.getRestaurant().getId().equals(restaurantId))
                 .mapToInt(Review::getScore)
                 .average()
                 .orElse(0.0);
-        for (Restaurant restaurant : restaurantRepository.findAll()) {
-            if (restaurant.getId().equals(restaurantId)) {
-                restaurant.setRating(BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP));
-            }
-        }
+        restaurantRepository.findById(restaurantId).ifPresent(restaurant -> {
+            restaurant.setRating(BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP));
+            restaurantRepository.save(restaurant);
+        });
     }
 
     private ReviewResponseDTO toResponseDTO(Review review) {
-        return new ReviewResponseDTO(review.getVisitorId(), review.getRestaurantId(), review.getScore(), review.getComment());
+        return new ReviewResponseDTO(
+                review.getVisitor().getId(),
+                review.getRestaurant().getId(),
+                review.getScore(),
+                review.getComment()
+        );
     }
 } 

@@ -3,7 +3,7 @@ package com.example.demo.service;
 import com.example.demo.dto.VisitorRequestDTO;
 import com.example.demo.dto.VisitorResponseDTO;
 import com.example.demo.model.Visitor;
-import com.example.demo.repository.VisitorRepository;
+import com.example.demo.repository.VisitorJpaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -13,24 +13,21 @@ import java.util.stream.Collectors;
 
 @Service
 public class VisitorService {
-    private final VisitorRepository visitorRepository;
+    private final VisitorJpaRepository visitorRepository;
 
     @Autowired
-    public VisitorService(VisitorRepository visitorRepository) {
+    public VisitorService(VisitorJpaRepository visitorRepository) {
         this.visitorRepository = visitorRepository;
     }
 
     public VisitorResponseDTO save(VisitorRequestDTO dto) {
         Visitor visitor = new Visitor(null, dto.name(), dto.age(), dto.gender());
-        visitorRepository.save(visitor);
+        visitor = visitorRepository.save(visitor);
         return toResponseDTO(visitor);
     }
 
     public void remove(Long id) {
-        visitorRepository.findAll().stream()
-                .filter(v -> v.getId().equals(id))
-                .findFirst()
-                .ifPresent(visitorRepository::remove);
+        visitorRepository.deleteById(id);
     }
 
     public List<VisitorResponseDTO> findAll() {
@@ -40,24 +37,18 @@ public class VisitorService {
     }
 
     public Optional<VisitorResponseDTO> findById(Long id) {
-        return visitorRepository.findAll().stream()
-                .filter(v -> v.getId().equals(id))
-                .findFirst()
+        return visitorRepository.findById(id)
                 .map(this::toResponseDTO);
     }
 
     public VisitorResponseDTO update(Long id, VisitorRequestDTO dto) {
-        Optional<Visitor> optional = visitorRepository.findAll().stream()
-                .filter(v -> v.getId().equals(id))
-                .findFirst();
-        if (optional.isPresent()) {
-            Visitor visitor = optional.get();
-            visitor.setName(dto.name());
-            visitor.setAge(dto.age());
-            visitor.setGender(dto.gender());
-            return toResponseDTO(visitor);
-        }
-        throw new IllegalArgumentException("Visitor not found");
+        Visitor visitor = visitorRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Visitor not found"));
+        visitor.setName(dto.name());
+        visitor.setAge(dto.age());
+        visitor.setGender(dto.gender());
+        visitor = visitorRepository.save(visitor);
+        return toResponseDTO(visitor);
     }
 
     private VisitorResponseDTO toResponseDTO(Visitor visitor) {

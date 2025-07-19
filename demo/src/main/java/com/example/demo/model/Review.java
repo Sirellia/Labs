@@ -1,15 +1,27 @@
 package com.example.demo.model;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Review {
-    private Long visitorId;
-    private Long restaurantId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "visitor_id")
+    private Visitor visitor;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "restaurant_id")
+    private Restaurant restaurant;
+
     private int score;
     private String comment;
 } 

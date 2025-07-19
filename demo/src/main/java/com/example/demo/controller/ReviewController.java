@@ -22,9 +22,9 @@ public class ReviewController {
         return reviewService.findAll();
     }
 
-    @GetMapping("/{visitorId}/{restaurantId}")
-    public ResponseEntity<ReviewResponseDTO> getById(@PathVariable Long visitorId, @PathVariable Long restaurantId) {
-        return reviewService.findById(visitorId, restaurantId)
+    @GetMapping("/{id}")
+    public ResponseEntity<ReviewResponseDTO> getById(@PathVariable Long id) {
+        return reviewService.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -34,18 +34,18 @@ public class ReviewController {
         return reviewService.save(dto);
     }
 
-    @PutMapping("/{visitorId}/{restaurantId}")
-    public ResponseEntity<ReviewResponseDTO> update(@PathVariable Long visitorId, @PathVariable Long restaurantId, @RequestBody ReviewRequestDTO dto) {
+    @PutMapping("/{id}")
+    public ResponseEntity<ReviewResponseDTO> update(@PathVariable Long id, @RequestBody ReviewRequestDTO dto) {
         try {
-            return ResponseEntity.ok(reviewService.update(visitorId, restaurantId, dto));
+            return ResponseEntity.ok(reviewService.update(id, dto));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
         }
     }
 
-    @DeleteMapping("/{visitorId}/{restaurantId}")
-    public ResponseEntity<Void> delete(@PathVariable Long visitorId, @PathVariable Long restaurantId) {
-        reviewService.remove(visitorId, restaurantId);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        reviewService.remove(id);
         return ResponseEntity.noContent().build();
     }
 } 
