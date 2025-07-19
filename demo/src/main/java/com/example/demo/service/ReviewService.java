@@ -67,12 +67,12 @@ public class ReviewService {
     private void recalculateRestaurantRating(Long restaurantId) {
         List<Review> reviews = reviewRepository.findAll();
         double avg = reviews.stream()
-                .filter(r -> r.getRestaurantId().equals(restaurantId))
+                .filter(r -> r.getRestaurantId() != null && r.getRestaurantId().equals(restaurantId))
                 .mapToInt(Review::getScore)
                 .average()
                 .orElse(0.0);
         for (Restaurant restaurant : restaurantRepository.findAll()) {
-            if (restaurant.getId().equals(restaurantId)) {
+            if (restaurant.getId() != null && restaurant.getId().equals(restaurantId)) {
                 restaurant.setRating(BigDecimal.valueOf(avg).setScale(2, RoundingMode.HALF_UP));
             }
         }
