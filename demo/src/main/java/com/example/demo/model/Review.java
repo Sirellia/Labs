@@ -24,4 +24,12 @@ public class Review {
 
     private int score;
     private String comment;
+
+    public Long getVisitorId() {
+        return visitor != null ? visitor.getId() : null;
+    }
+
+    public Long getRestaurantId() {
+        return restaurant != null ? restaurant.getId() : null;
+    }
 } 

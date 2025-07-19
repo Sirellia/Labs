@@ -31,17 +31,14 @@ public class DemoDataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        // Добавляем посетителей
         VisitorResponseDTO v1 = visitorService.save(new VisitorRequestDTO("Иван", 25, Visitor.Gender.MALE));
         VisitorResponseDTO v2 = visitorService.save(new VisitorRequestDTO(null, 30, Visitor.Gender.FEMALE));
         VisitorResponseDTO v3 = visitorService.save(new VisitorRequestDTO("Анна", 22, Visitor.Gender.FEMALE));
 
-        // Добавляем рестораны
         RestaurantResponseDTO r1 = restaurantService.save(new RestaurantRequestDTO("Пиццерия Италия", "Настоящая итальянская пицца", CuisineType.ITALIAN, 800));
         RestaurantResponseDTO r2 = restaurantService.save(new RestaurantRequestDTO("Дракон", "Лучший китайский ресторан", CuisineType.CHINESE, 600));
         RestaurantResponseDTO r3 = restaurantService.save(new RestaurantRequestDTO("Европа", "", CuisineType.EUROPEAN, 1000));
 
-        // Добавляем отзывы
         reviewService.save(new ReviewRequestDTO(v1.id(), r1.id(), 5, "Очень вкусно!"));
         reviewService.save(new ReviewRequestDTO(v2.id(), r1.id(), 4, "Пицца хорошая, но долго ждал"));
         reviewService.save(new ReviewRequestDTO(v3.id(), r2.id(), 3, "Средне"));
